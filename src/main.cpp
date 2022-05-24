@@ -9,18 +9,18 @@ void setup()
   Serial.println();
 
   MyContorlInit();
-  MyTelegramInit();  
-  MyBlinkInit();// тут включено соединение с точкой доступа
+  //MyTelegramInit();  
+  //MyBlinkInit();// тут включено соединение с точкой доступа
 }
 
 void loop()
 {
-  MyBlinkRun();
-  TelegramTextMessage();
+  //MyBlinkRun();
+  //TelegramTextMessage();
 
   Receive(); // Приём данных из ком порта
   Movement();
-  // ButtonControl();
+  ButtonControl();
 }
 
 /* https://patorjk.com/software/taag/#p=display&h=0&v=1&f=Crazy&t=WELCOME%20%0Amr%20Kurbatov%20

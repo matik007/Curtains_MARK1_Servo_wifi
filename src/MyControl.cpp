@@ -23,7 +23,7 @@
 uint8_t state = STOP;
 uint8_t LAST_STATE;
 
-int16_t count = 0;
+volatile int16_t count = 0;
 int16_t MAX_COUNT = 0;
 
 GButton buttUp(BTN_UP_PIN);
@@ -81,40 +81,44 @@ void ButtonControl(){
   buttDown.tick();
 
   if (!holdUpFlag || !holdDownFlag) {
-    if (buttUp.isClick()) {
-      Serial.println("Click up btn");         // проверка на один клик
+    if (buttUp.isSingle()) {
+      Serial.println("Click up btn. stop");         // проверка на один клик
 
       if (state == UP || state == DOWN) {
         state = STOP;
       } else {
+        Serial.println("Clicked Up Button. Go UP");
         state = UP;
       }
     }
 
-    if (buttDown.isClick()) {
-      Serial.println("Click down btn");         // проверка на один клик
+    if (buttDown.isSingle()) {
+      Serial.println("Click down btn. stop");         // проверка на один клик
 
       if (state == UP || state == DOWN) {
         state = STOP;
       } else {
+        Serial.println("Clicked Down Button. Go DOWN");
         state = DOWN;
       }
     }
-  }
-  if(buttUp.isHold() || buttDown.isHold()){
-    if(buttUp.isHold() && buttDown.isHold()){
-      holdUpFlag = true;
-      holdDownFlag = true;
+
+    if(buttUp.isTriple() || buttDown.isTriple()){
       state = CALIBRATION;
-    } else if (buttUp.isHold()) { // если кнопка удерживается
+      Serial.println("3 click. stop");
+    }
+
+    if (buttUp.isHolded()) { // если кнопка удерживается
       state = UP;
       holdUpFlag = true;
       Serial.println("Hold UP btn");
-    } else if (buttDown.isHold()) { // если кнопка удерживается
+    } else if (buttDown.isHolded()) { // если кнопка удерживается
       state = DOWN;
       holdDownFlag = true;
       Serial.println("Hold DOWN btn");
     }
+  
+  
     
 
     if (holdUpFlag || holdDownFlag) {
@@ -133,7 +137,16 @@ void ButtonControl(){
 bool calibrationFlag = 0;
 
 void Movement() {
-  Serial.println(count);
+
+// Если не калибровка, но движение и если достигнуто максимальное занчение счётчика, стоп
+  if(!calibrationFlag && (state == UP || state == DOWN)){
+    if(count >= MAX_COUNT){
+      Serial.println("count = max count");
+      state = STOP;
+    }
+  }
+
+  //Serial.println(count);
   if(LAST_STATE != state){
     LAST_STATE = state;
     switch (state) {
@@ -141,31 +154,56 @@ void Movement() {
         Serial.println("STOP");
         servo.write(90);
         servo.detach();
-        if(calibrationFlag){
+        if(calibrationFlag){ // если это была колибровка
           calibrationFlag = 0;
           MAX_COUNT = count;
           Serial.print("MAX_COUNT = ");
           Serial.println(MAX_COUNT);
         }
+        count = 0; // необходимо обнулять в любом случае 
         break;
       case DOWN:
+      /*if(calibrationFlag){
         servo.attach(SERVO_PIN);
         Serial.println("DOWN");
-        // Плавный пуск для компинсации просадки напряжения
-        for(int i = 90; i < MAX_SERVO_SPEED_DOWN; i++){
-          servo.write(i);
-          delay(2);
-        }
-        
-        break;
-      case UP:
-        servo.attach(SERVO_PIN);
-        Serial.println("UP");
+        count = 0;
         // Плавный пуск для компинсации просадки напряжения
         for(int i = 90; i > MAX_SERVO_SPEED_UP; i--){
           servo.write(i);
-          delay(2);
+          delay(1);
         }
+      } else if(MAX_COUNT > 0){*/
+        servo.attach(SERVO_PIN);
+        Serial.println("DOWN");
+        count = 0;
+        // Плавный пуск для компинсации просадки напряжения
+        for(int i = 90; i < MAX_SERVO_SPEED_DOWN; i++){
+          servo.write(i);
+          delay(1);
+        }
+      
+        
+        break;
+      case UP:
+      /*if(calibrationFlag){
+        servo.attach(SERVO_PIN);
+        Serial.println("UP");
+        count = 0;
+        // Плавный пуск для компинсации просадки напряжения
+        for(int i = 90; i > MAX_SERVO_SPEED_UP; i--){
+          servo.write(i);
+          delay(1);
+        }
+      } else if(MAX_COUNT > 0){*/
+        servo.attach(SERVO_PIN);
+        Serial.println("UP");
+        count = 0;
+        // Плавный пуск для компинсации просадки напряжения
+        for(int i = 90; i > MAX_SERVO_SPEED_UP; i--){
+          servo.write(i);
+          delay(1);
+        }
+      
         break;
       case CALIBRATION:
         Serial.println("CALIBRATION");
