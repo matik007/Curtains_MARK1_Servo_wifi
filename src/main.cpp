@@ -10,7 +10,9 @@ void setup()
 
   MyContorlInit();
   //MyTelegramInit();  
-  //MyBlinkInit();// тут включено соединение с точкой доступа
+  digitalWrite(LED_PIN, HIGH);
+ // MyBlinkInit();// тут включено соединение с точкой доступа
+  digitalWrite(LED_PIN, LOW);
 }
 
 void loop()
@@ -18,6 +20,7 @@ void loop()
   //MyBlinkRun();
   //TelegramTextMessage();
 
+  Blink();
   Receive(); // Приём данных из ком порта
   Movement();
   ButtonControl();

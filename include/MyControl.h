@@ -5,6 +5,18 @@
 #include <Servo.h>
 #include <GyverButton.h>
 
+// Servo pin
+#define SERVO_PIN 12
+//Buttons pins
+#define BTN_UP_PIN 14
+#define BTN_DOWN_PIN 5
+// LED
+#define LED_PIN 13
+// Sensor input
+#define SENSOR_PIN 4
+// Battary 
+#define BATTERY_PIN A0
+
 // Movement states
 #define STOP 0
 #define UP 1
@@ -13,6 +25,7 @@
 
 extern uint8_t state;
 
+void Blink();
 void MyContorlInit();
 IRAM_ATTR void  MyInterupt();
 void Receive();
