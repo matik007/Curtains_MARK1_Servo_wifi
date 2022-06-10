@@ -8,8 +8,8 @@
 // Servo pin
 #define SERVO_PIN 12
 //Buttons pins
-#define BTN_UP_PIN 14
-#define BTN_DOWN_PIN 5
+#define BTN_UP_PIN 5
+#define BTN_DOWN_PIN 14
 // LED
 #define LED_PIN 13
 // Sensor input

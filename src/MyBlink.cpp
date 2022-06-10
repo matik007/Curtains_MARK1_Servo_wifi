@@ -22,7 +22,7 @@ BLYNK_WRITE(V0) // функция, отслеживающая изменение
   int pinValue = param.asInt();  //переменная текущего состояния виртуального пина
   Serial.print("V0: ");
   Serial.println(pinValue);
-  if(pinValue == 1){
+  if(pinValue == 0){
     state = UP;
     Serial.println("Telegram UP");
   } else {

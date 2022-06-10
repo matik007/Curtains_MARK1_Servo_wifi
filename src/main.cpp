@@ -11,13 +11,13 @@ void setup()
   MyContorlInit();
   //MyTelegramInit();  
   digitalWrite(LED_PIN, HIGH);
- // MyBlinkInit();// тут включено соединение с точкой доступа
+  MyBlinkInit();// тут включено соединение с точкой доступа
   digitalWrite(LED_PIN, LOW);
 }
 
 void loop()
 {
-  //MyBlinkRun();
+  MyBlinkRun();
   //TelegramTextMessage();
 
   Blink();

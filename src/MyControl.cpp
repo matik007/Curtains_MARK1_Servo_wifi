@@ -7,6 +7,21 @@
 #define UP_POSITION 600
 #define DOWN_POSITION 490
 
+uint8_t state = STOP;
+uint8_t LAST_STATE;
+
+volatile int16_t count = 0;
+int16_t MAX_COUNT = 0;
+
+bool holdUpFlag = 0, holdDownFlag = 0;
+bool calibrationFlag = 0;
+
+GButton buttUp(BTN_UP_PIN);
+GButton buttDown(BTN_DOWN_PIN);
+
+Servo servo;
+
+
 bool blinkFlag = 0;
 uint32_t lastBlinkTime = 0;
 
@@ -19,17 +34,6 @@ void Blink(){
   }
 }
 
-uint8_t state = STOP;
-uint8_t LAST_STATE;
-
-volatile int16_t count = 0;
-int16_t MAX_COUNT = 0;
-
-GButton buttUp(BTN_UP_PIN);
-GButton buttDown(BTN_DOWN_PIN);
-
-Servo servo;
-
 void MyContorlInit(){
     pinMode(LED_PIN, OUTPUT);
     pinMode(SENSOR_PIN, INPUT);
@@ -37,11 +41,19 @@ void MyContorlInit(){
 
     buttUp.setType(LOW_PULL);
     buttDown.setType(LOW_PULL);
-    attachInterrupt(SENSOR_PIN, MyInterupt, RISING);
+    attachInterrupt(SENSOR_PIN, MyInterupt, CHANGE);
 }
 
 IRAM_ATTR void  MyInterupt(){
-  count++;
+  if (calibrationFlag){
+    count++;
+  } else if(!holdDownFlag && !holdUpFlag){
+    if(state == UP){
+      count++;
+    } else if(state == DOWN){
+      count--;
+    }
+  }
 }
 
 void Blink(uint16_t sp){
@@ -73,40 +85,42 @@ void Receive() {
   }
 }
 
-bool holdUpFlag = 0, holdDownFlag = 0;
+
 
 void ButtonControl(){
   buttUp.tick();
   buttDown.tick();
 
+// Проверка на один клик
   if (!holdUpFlag || !holdDownFlag) {
     if (buttUp.isSingle()) {
-      Serial.println("Click up btn. stop");         // проверка на один клик
-
       if (state == UP || state == DOWN) {
         state = STOP;
+        Serial.println("Click Up btn. stop");
       } else {
         Serial.println("Clicked Up Button. Go UP");
         state = UP;
       }
     }
-
     if (buttDown.isSingle()) {
-      Serial.println("Click down btn. stop");         // проверка на один клик
+      
 
       if (state == UP || state == DOWN) {
         state = STOP;
+        Serial.println("Click Down btn. stop");
       } else {
         Serial.println("Clicked Down Button. Go DOWN");
         state = DOWN;
       }
     }
 
-    if(buttUp.isTriple() || buttDown.isTriple()){
+// Проверка на тройной клик
+    if(buttUp.isTriple()){
       state = CALIBRATION;
       Serial.println("3 click. stop");
     }
 
+// Проверка на удержание
     if (buttUp.isHolded()) { // если кнопка удерживается
       state = UP;
       holdUpFlag = true;
@@ -116,9 +130,6 @@ void ButtonControl(){
       holdDownFlag = true;
       Serial.println("Hold DOWN btn");
     }
-  
-  
-    
 
     if (holdUpFlag || holdDownFlag) {
       if (buttUp.isRelease()) {
@@ -135,16 +146,16 @@ void ButtonControl(){
   }
 }
 
-bool calibrationFlag = 0;
+
 
 void Movement() {
 
 // Если не калибровка и не удержание, но движение и если достигнуто максимальное занчение счётчика, стоп
   if(!calibrationFlag && !holdDownFlag && !holdUpFlag && (state == UP || state == DOWN)){
-    if(count >= MAX_COUNT){
-      Serial.println("count = max count");
-      Serial.print("holdFlag = ");
-      Serial.println(holdDownFlag);
+    
+    if(count >= MAX_COUNT && state == UP){
+      state = STOP;
+    } else if(count <= 0 && state == DOWN){
       state = STOP;
     }
   }
@@ -155,6 +166,8 @@ void Movement() {
     switch (state) {
       case STOP:
         Serial.println("STOP");
+        Serial.print("count = ");
+        Serial.println(count);
         servo.write(90);
         servo.detach();
         if(calibrationFlag){ // если это была колибровка
@@ -165,12 +178,10 @@ void Movement() {
           Serial.print("MAX_COUNT = ");
           Serial.println(MAX_COUNT);
         }
-        count = 0; // необходимо обнулять в любом случае 
         break;
       case DOWN:
         servo.attach(SERVO_PIN);
         Serial.println("DOWN");
-        count = 0;
         // Плавный пуск для компинсации просадки напряжения
         for(int i = 90; i < MAX_SERVO_SPEED_DOWN; i++){
           servo.write(i);
@@ -182,7 +193,6 @@ void Movement() {
       case UP:
         servo.attach(SERVO_PIN);
         Serial.println("UP");
-        count = 0;
         // Плавный пуск для компинсации просадки напряжения
         for(int i = 90; i > MAX_SERVO_SPEED_UP; i--){
           servo.write(i);
